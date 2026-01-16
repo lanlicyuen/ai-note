@@ -1,0 +1,99 @@
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Visual Studio Code
+.vscode/
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Android
+# Built application files
+*.apk
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+*/gen/
+*/bin/
+*/out/
+
+# Gradle files
+.gradle/
+build/
+# Local configuration file (sdk path, etc)
+local.properties
+
+# iOS/macOS
+# Xcode
+#
+# gitignore contributors: remember to keep this file negative
+# Global excludes
+.DS_Store
+/build/
+/ios/Flutter/App.framework
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+/ios/Pods/
+/ios/.symlinks/
+/ios/Runner.xcworkspace
+/ios/Runner/GeneratedPluginRegistrant.h
+/ios/Runner/GeneratedPluginRegistrant.m
+/ios/Flutter/Debug/
+/ios/Flutter/Release/
+# Pods
+/ios/pods/
+# CocoaPods
+/ios/Podfile.lock
+/ios/Pods/
+!/ios/Pods/space
+/ios/Flutter/ephemeral/
+/ios/Flutter/Flutter.podspec
+
+# macOS
+/macos/Flutter/GeneratedPluginRegistrant.swift
+/macos/Flutter/ephemeral/
+/macos/.symlinks/
+
+# Linux
+/linux/flutter/generated_plugin_registrant.h
+/linux/flutter/generated_plugin_registrant.cc
+/linux/flutter/generated_plugins.cmake
+/linux/flutter/ephemeral
+
+# Windows
+/windows/flutter/generated_plugin_registrant.h
+/windows/flutter/generated_plugin_registrant.cc
+/windows/flutter/generated_plugins.cmake
+/windows/flutter/ephemeral
+
+# Web
+/web/flutter_bootstrap.js
+/web/main.dart.js
