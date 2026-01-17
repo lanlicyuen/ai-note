@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 // --- THEME AND STYLING --- //
 
@@ -183,7 +184,10 @@ class NoteProvider extends ChangeNotifier {
   List<Note> get notes => _notes;
   List<Folder> get folders => _folders;
   List<Note> get recentNotes =>
-      _notes.take(5).toList()..sort((a, b) => b.lastModified.compareTo(a.lastModified));
+      _notes.where((n) => n.folderId != null).toList()
+      ..sort((a, b) => b.lastModified.compareTo(a.lastModified));
+  List<Note> get uncategorizedNotes =>
+      _notes.where((note) => note.folderId == null).toList();
 
   NoteProvider() {
     _loadSampleData();
@@ -199,6 +203,7 @@ class NoteProvider extends ChangeNotifier {
     _notes.addAll([
       Note(id: 'n1', title: 'My First Note', content: 'This is the content of my first note!', lastModified: DateTime.now().subtract(const Duration(days: 1)), folderId: 'f1'),
       Note(id: 'n2', title: 'Meeting Thoughts', content: 'Brainstorming session about the new project.', lastModified: DateTime.now(), folderId: 'f2'),
+      Note(id: 'n3', title: 'Grocery List', content: '* Milk\n* Bread\n* Eggs', lastModified: DateTime.now().subtract(const Duration(hours: 2))),
     ]);
     notifyListeners();
   }
@@ -221,6 +226,12 @@ class NoteProvider extends ChangeNotifier {
       createdAt: DateTime.now(),
     );
     _folders.add(newFolder);
+    notifyListeners();
+  }
+
+  void moveNoteToFolder(String noteId, String folderId) {
+    final note = _notes.firstWhere((n) => n.id == noteId);
+    note.folderId = folderId;
     notifyListeners();
   }
 
@@ -265,8 +276,15 @@ class AiNoteApp extends StatelessWidget {
 
 // --- SCREENS --- //
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String? _hoveredFolderId;
 
   @override
   Widget build(BuildContext context) {
@@ -292,9 +310,9 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 16),
               _buildFolderGrid(context, noteProvider.folders),
               const SizedBox(height: 24),
-              _buildSectionHeader(context, 'Recent Notes', null),
+              _buildSectionHeader(context, 'Uncategorized Notes', null),
               const SizedBox(height: 16),
-              _buildRecentNotesList(context, noteProvider.recentNotes),
+              _buildUncategorizedNotesGrid(context, noteProvider.uncategorizedNotes),
             ],
           );
         },
@@ -337,30 +355,55 @@ class HomeScreen extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemBuilder: (context, index) {
         final folder = folders[index];
-        return InkWell(
-          onTap: () {
-             Navigator.push(context, MaterialPageRoute(builder: (_) => FolderScreen(folder: folder)));
-          },
-          borderRadius: BorderRadius.circular(20),
-          child: Card(
-            color: folder.color,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Icon(Icons.folder_rounded, size: 40, color: Colors.white),
-                  Text(
-                    folder.name,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: darkTextColor),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+        return DragTarget<Note>(
+          builder: (context, candidateData, rejectedData) {
+            final isHovered = _hoveredFolderId == folder.id;
+            return InkWell(
+              onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (_) => FolderScreen(folder: folder)));
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: Card(
+                color: isHovered ? folder.color.withOpacity(0.7) : folder.color,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Icon(Icons.folder_rounded, size: 40, color: Colors.white),
+                      Text(
+                        folder.name,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: darkTextColor),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
+          onWillAcceptWithDetails: (note) {
+            setState(() {
+              _hoveredFolderId = folder.id;
+            });
+            return true;
+          },
+          onAcceptWithDetails: (note) {
+            Provider.of<NoteProvider>(context, listen: false).moveNoteToFolder(note.id, folder.id);
+             ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Moved "${note.title}" to "${folder.name}"'), backgroundColor: accentColor),
+            );
+            setState(() {
+              _hoveredFolderId = null;
+            });
+          },
+          onLeave: (note) {
+            setState(() {
+              _hoveredFolderId = null;
+            });
+          },
         );
       },
     );
@@ -401,37 +444,63 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentNotesList(BuildContext context, List<Note> notes) {
+  Widget _buildUncategorizedNotesGrid(BuildContext context, List<Note> notes) {
     if (notes.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(24.0),
-          child: Text("No recent notes. Create one!", style: TextStyle(color: Colors.grey)),
+          child: Text("No uncategorized notes. Great job!", style: TextStyle(color: Colors.grey)),
         ),
       );
     }
-    return ListView.builder(
+    return StaggeredGridView.countBuilder(
+      crossAxisCount: 2,
       itemCount: notes.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemBuilder: (context, index) {
+      itemBuilder: (BuildContext context, int index) {
         final note = notes[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            title: Text(note.title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1),
-            subtitle: Text(
-              note.content,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+        return Draggable<Note>(
+          data: note,
+          feedback: Material(
+            elevation: 4.0,
+            child: Card(
+              color: creamyWhite.withOpacity(0.8),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.4),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(note.title, style: Theme.of(context).textTheme.titleMedium),
+                ),
+              ),
             ),
+          ),
+          childWhenDragging: Card(
+            color: Colors.grey.shade200,
+          ),
+          child: InkWell(
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => NoteEditorScreen(note: note)));
             },
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(note.title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1),
+                    const SizedBox(height: 4),
+                    Text(note.content, maxLines: 5, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+            ),
           ),
         );
       },
+      staggeredTileBuilder: (int index) => const StaggeredTile.fit(1),
+      mainAxisSpacing: 8.0,
+      crossAxisSpacing: 8.0,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
     );
   }
 }
