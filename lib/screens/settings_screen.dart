@@ -1,44 +1,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:myapp/providers/app_settings.dart';
-import 'package:myapp/theme.dart';
 import 'package:provider/provider.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  late TextEditingController _apiKeyController;
-  late TextEditingController _promptController;
-
-  @override
-  void initState() {
-    super.initState();
-    final settings = Provider.of<AppSettings>(context, listen: false);
-    _apiKeyController = TextEditingController(text: settings.apiKey);
-    _promptController = TextEditingController(text: settings.customPrompt);
-  }
-
-  @override
-  void dispose() {
-    _apiKeyController.dispose();
-    _promptController.dispose();
-    super.dispose();
-  }
-
-  void _saveSettings() {
-    final settings = Provider.of<AppSettings>(context, listen: false);
-    settings.updateApiKey(_apiKeyController.text.trim());
-    settings.updateCustomPrompt(_promptController.text.trim());
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Settings Saved!'), backgroundColor: accentColor),
-    );
-    Navigator.pop(context);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,40 +12,88 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          Text('API Settings', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          const Text('Provide your DeepSeek API key below. This is stored securely on your device.'),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _apiKeyController,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'DeepSeek API Key',
-              hintText: 'Enter your API Key',
-            ),
+      body: Consumer<AppSettings>(
+        builder: (context, settings, child) {
+          final apiKeyController = TextEditingController(text: settings.apiKey);
+          final promptController = TextEditingController(text: settings.customPrompt);
+
+          return ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              _buildSectionTitle(context, 'Theme'),
+              _buildThemeSelector(context, settings),
+              const SizedBox(height: 24),
+              _buildSectionTitle(context, 'AI Settings'),
+              _buildTextField(
+                controller: apiKeyController,
+                label: 'Gemini API Key',
+                hint: 'Enter your API Key',
+                onChanged: (value) => settings.updateApiKey(value),
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: promptController,
+                label: 'Custom Prompt',
+                hint: 'Set your custom prompt for AI generation',
+                maxLines: 3,
+                onChanged: (value) => settings.updateCustomPrompt(value),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
           ),
-          const SizedBox(height: 24),
-          Text('AI Prompt', style: Theme.of(context).textTheme.headlineSmall),
-           const SizedBox(height: 8),
-          const Text('Customize the instructions given to the AI when polishing your text.'),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _promptController,
-            maxLines: 5,
-            decoration: const InputDecoration(
-              labelText: 'Custom System Prompt',
-              hintText: 'e.g., "Polish this text..."',
-            ),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: _saveSettings,
-            child: const Text('Save Settings'),
-          ),
-        ],
+    );
+  }
+
+  Widget _buildThemeSelector(BuildContext context, AppSettings settings) {
+    return Column(
+      children: [
+        RadioListTile<ThemeMode>(
+          title: const Text('Light Mode'),
+          value: ThemeMode.light,
+          groupValue: settings.themeMode,
+          onChanged: (value) => settings.updateThemeMode(value!),
+        ),
+        RadioListTile<ThemeMode>(
+          title: const Text('Dark Mode'),
+          value: ThemeMode.dark,
+          groupValue: settings.themeMode,
+          onChanged: (value) => settings.updateThemeMode(value!),
+        ),
+        RadioListTile<ThemeMode>(
+          title: const Text('System Default'),
+          value: ThemeMode.system,
+          groupValue: settings.themeMode,
+          onChanged: (value) => settings.updateThemeMode(value!),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required ValueChanged<String> onChanged,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        alignLabelWithHint: true,
       ),
     );
   }

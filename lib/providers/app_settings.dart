@@ -4,6 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AppSettings extends ChangeNotifier {
   late SharedPreferences _prefs;
+
+  // Theme settings
+  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode get themeMode => _themeMode;
+
+  // AI settings
   String _apiKey = '';
   String _customPrompt = 'Please polish the following text and return it in Markdown format.';
 
@@ -16,11 +22,27 @@ class AppSettings extends ChangeNotifier {
 
   Future<void> _loadSettings() async {
     _prefs = await SharedPreferences.getInstance();
-    _apiKey = _prefs.getString('apiKey') ?? 'sk-83b0f224c3e844ad843beecbd64e3adb';
+
+    // Load Theme
+    final themeIndex = _prefs.getInt('themeMode') ?? ThemeMode.system.index;
+    _themeMode = ThemeMode.values[themeIndex];
+
+    // Load AI settings
+    _apiKey = _prefs.getString('apiKey') ?? ''; // Default to empty for security
     _customPrompt = _prefs.getString('customPrompt') ?? 'Please polish the following text and return it in Markdown format.';
+
     notifyListeners();
   }
 
+  // --- Theme Methods ---
+  Future<void> updateThemeMode(ThemeMode mode) async {
+    if (mode == _themeMode) return;
+    _themeMode = mode;
+    await _prefs.setInt('themeMode', mode.index);
+    notifyListeners();
+  }
+
+  // --- AI Setting Methods ---
   Future<void> updateApiKey(String newKey) async {
     _apiKey = newKey;
     await _prefs.setString('apiKey', newKey);

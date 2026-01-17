@@ -97,12 +97,12 @@ class _HomeScreenState extends State<HomeScreen> {
       itemBuilder: (context, index) {
         final folder = folders[index];
         return DragTarget<Note>(
-          onWillAccept: (note) => note?.folderId != folder.id,
-          onAccept: (note) {
-            noteProvider.moveNoteToFolder(note.id, folder.id);
+          onWillAcceptWithDetails: (details) => details.data.folderId != folder.id,
+          onAcceptWithDetails: (details) {
+            noteProvider.moveNoteToFolder(details.data.id, folder.id);
             setState(() => _hoveredFolderId = null);
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('Moved "${note.title}" to "${folder.name}"'),
+              content: Text('Moved "${details.data.title}" to "${folder.name}"'),
               backgroundColor: folder.color,
             ));
           },
