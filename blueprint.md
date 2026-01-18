@@ -1,75 +1,51 @@
-# AiNote 应用蓝图
+# AiNote Blueprint
 
-## 1. 应用概述
+## Overview
 
-**AiNote** 是一个现代、美观的笔记应用，旨在提供一个简洁、高效的笔记记录体验。它完全支持 Markdown 格式，并集成了强大的 Gemini AI 功能，可以一键润色和优化您的笔记。应用遵循 Material Design 3 设计原则，拥有一个响应式布局，并支持用户自由选择浅色、深色或系统默认主题。
+This document outlines the architecture, features, and design of the AiNote application. It serves as a single source of truth for the project's implementation details.
 
-## 2. 已实现功能与设计
+## Core Features & Design
 
-### 设计与主题
-*   **Material Design 3**: 应用整体 UI/UX 遵循最新的 Material 3 指南。
-*   **响应式布局**: 使用 `flutter_staggered_grid_view` 创建了一个瀑布流布局，确保在不同尺寸的屏幕上都有良好的视觉效果。
-*   **主题管理 (Provider)**:
-    *   在 `AppSettings` 提供程序中实现了完善的主题管理逻辑。
-    *   支持**浅色**、**深色**和**系统默认**三种主题模式。
-    *   用户可在专门的设置页面中进行选择。
-*   **自定义字体 (Google Fonts)**:
-    *   标题和正文统一使用 `Lato` 字体，保证了视觉一致性和优良的可读性。
-*   **视觉风格**:
-    *   应用包含精心设计的**浅色**和**深色**两个主题。
-    *   卡片式笔记布局，带有圆角和阴影，营造出层次感。
-    *   统一且协调的颜色方案，为用户带来舒适的视觉体验。
+### 1. Note Management
 
-### 核心功能
-*   **完整的笔记 CRUD (创建/读取/更新/删除) 功能**:
-    *   **创建**: 用户可以通过悬浮按钮进入 `NoteEditorScreen` 创建新笔记。
-    *   **读取**: 主屏幕以瀑布流网格的形式展示所有未归档的笔记。点击笔记卡片可进入编辑器查看和修改。
-    *   **更新**: 在 `NoteEditorScreen` 中修改笔记的标题或内容后，点击保存按钮即可更新。编辑器会智能处理“创建”和“更新”两种模式。
-    *   **删除与撤销**: 在主屏幕通过滑动笔记卡片可将其删除，删除后会弹出 `SnackBar` 提供“撤销”选项，防止误操作。
-*   **Markdown 支持**:
-    *   笔记编辑器 (`NoteEditorScreen`) 支持 Markdown 语法输入。
-    *   提供预览模式，使用 `flutter_markdown_plus` 精美地渲染 Markdown 内容。
-*   **文件夹系统**:
-    *   用户可以创建带有自定义颜色和名称的文件夹。
-    *   通过拖拽或菜单操作，可以将笔记轻松移入不同文件夹。
-*   **笔记归档**:
-    *   用户可以归档笔记，归档后的笔记会从主列表隐藏，并显示在专门的“归档”页面。
-*   **设置页面**:
-    *   提供一个独立的设置页面，用于统一管理应用的所有偏好设置。
-    *   用户可以在此页面切换主题。
+*   **Create, Edit, Delete Notes**: Core functionality for note lifecycle management.
+*   **Rich Text Editor**: A simple, full-screen editor for writing and editing notes.
+*   **Folder Organization**: 
+    *   Users can create colored folders to categorize notes.
+    *   Notes can be moved between folders via a context menu or drag-and-drop.
+*   **Archiving**: Notes can be archived to be hidden from the main view and managed in a separate "Archived Notes" screen.
+*   **Undo Delete**: A SnackBar with an "UNDO" action appears after deleting a note, allowing the user to revert the deletion.
 
-### AI 智能功能
-*   **集成 Gemini AI**:
-    *   使用 **`firebase_ai`** 包安全、高效地集成了 Google的 Gemini 模型。
-    *   在笔记编辑器中提供“AI 润色”功能，用户点击按钮即可自动优化和美化当前笔记内容。
-*   **自定义 AI 指令**:
-    *   用户可以在设置页面中修改用于 AI 润色的系统提示（Custom Prompt），以满足个性化的文本风格需求。
+### 2. UI & UX
 
-### 状态管理与数据持久化
-*   **Provider 状态管理**:
-    *   **`NoteProvider`**: 负责管理所有笔记、文件夹的创建、更新、删除和状态变更。
-    *   **`AppSettings`**: 负责管理应用的主题模式和 AI 相关设置。
-*   **本地数据持久化**:
-    *   使用 **`shared_preferences`** 在设备本地保存用户的主题偏好设置。
+*   **Modern Aesthetics**: The app uses Material Design 3 components, a visually balanced layout, clean spacing, and polished styles.
+*   **Responsive Design**: The UI is designed to be responsive and work well on both mobile and web.
+*   **Light/Dark Mode**: The application supports both light and dark themes, with a toggle in the settings screen. The theme is persisted using `shared_preferences`.
+*   **Staggered Grid View**: Uncategorized notes are displayed in a `MasonryGridView` for a visually dynamic layout.
+*   **Intuitive Navigation**: The app uses a simple and clear navigation structure.
 
-### 项目结构与品牌
-*   **品牌与标识**:
-    *   为应用设计了自定义图标，并配置了原生启动画面和正确的应用名称/包名。
-*   **依赖管理**: `pubspec.yaml` 文件中清晰地组织了应用的各项依赖。
+### 3. State Management
 
-## 3. 当前开发计划
+*   **Provider**: The `provider` package is used for state management, specifically with `ChangeNotifierProvider` to manage the `NoteProvider` and `ThemeProvider`.
+*   **NoteProvider**: A central class that manages all note and folder data, including CRUD operations, archiving, and moving notes.
+*   **ThemeProvider**: Manages the application's theme (light/dark/system) and persists the choice to `shared_preferences`.
 
-*   **引入“AI 指令面板”**: 我们将把现有的单一“润色”功能升级为一个多功能的 AI 指令面板。点击 AI 按钮后，用户将看到一个包含多个选项的菜单，例如：
-    *   **✨ 优化文本 (Polish Text)**
-    *   **📝 总结内容 (Summarize)**
-    *   **🌐 翻译为... (Translate to...)**
-    *   **🤔 解释这段文字 (Explain This)**
+### 4. Local Storage
 
-## 4. 未来计划
+*   **SharedPreferences**: Used to persist:
+    *   The user's selected theme.
+    *   The user's custom text prompts.
 
-*   **数据库集成**:
-    *   使用本地数据库（如 SQLite 或 Hive）或云数据库（如 Firebase Firestore）来替代当前的内存数据存储，实现真正的持久化和跨会话数据保存。
-*   **用户认证**:
-    *   添加用户登录和注册功能（如 Firebase Authentication），为未来的多端数据同步打下基础。
-*   **多端同步**:
-    *   在实现用户认证和云数据库后，让用户的笔记和设置可以在不同设备间无缝同步。
+## New Feature: Customizable Prompts
+
+### Plan & Steps
+
+1.  **UI for Prompts**: 
+    *   Add three buttons to the `NoteEditorScreen`.
+    *   Each button will insert a predefined text string into the note content.
+2.  **Settings for Prompts**:
+    *   Add a settings icon to the `NoteEditorScreen`'s app bar.
+    *   Tapping the icon opens a dialog where the user can define the text for each of the three prompts.
+3.  **Persistence**: 
+    *   Use the `shared_preferences` package to save the three prompt strings locally on the device.
+    *   The `NoteEditorScreen` will load the saved prompts when it initializes.
