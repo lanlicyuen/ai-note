@@ -9,12 +9,7 @@ import 'package:provider/provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // It's good practice to have a single AppSettings instance
-  // that can be initialized once and used throughout the app.
   final appSettings = AppSettings();
-  // The AppSettings constructor calls _loadSettings, which is async.
-  // We don't necessarily need to wait for it here, as the Consumer
-  // will rebuild when the settings are loaded.
 
   runApp(AiNoteApp(appSettings: appSettings));
 }
@@ -35,9 +30,9 @@ class AiNoteApp extends StatelessWidget {
         builder: (context, settings, child) {
           return MaterialApp(
             title: 'AiNote',
-            theme: lightTheme, // Your light theme
-            darkTheme: darkTheme, // Your new dark theme
-            themeMode: settings.themeMode, // Controlled by the provider
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            themeMode: settings.themeMode,
             home: const HomeScreen(),
             debugShowCheckedModeBanner: false,
           );

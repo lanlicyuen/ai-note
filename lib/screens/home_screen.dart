@@ -7,6 +7,7 @@ import 'package:myapp/screens/archived_notes_screen.dart';
 import 'package:myapp/screens/folder_screen.dart';
 import 'package:myapp/screens/note_editor_screen.dart';
 import 'package:myapp/screens/settings_screen.dart';
+import 'package:myapp/screens/todo_list_screen.dart'; // Import the new screen
 import 'package:myapp/theme.dart';
 import 'package:provider/provider.dart';
 
@@ -26,6 +27,14 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('AiNote'),
         actions: [
+          // New IconButton for the To-Do List
+          IconButton(
+            icon: const Icon(Icons.playlist_add_check_rounded, size: 30),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const TodoListScreen()));
+            },
+            tooltip: 'Smart To-Do List',
+          ),
           IconButton(
             icon: const Icon(Icons.archive_outlined, size: 28),
             onPressed: () {

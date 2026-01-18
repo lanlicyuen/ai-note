@@ -1,93 +1,80 @@
+
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myapp/models.dart';
+import 'package:myapp/providers/note_provider.dart';
+import 'package:provider/provider.dart';
+
+// Import Task model
 
 class NoteEditorScreen extends StatefulWidget {
   final Note? note;
+
   const NoteEditorScreen({super.key, this.note});
 
   @override
-  State<NoteEditorScreen> createState() => _NoteEditorScreenState();
+  _NoteEditorScreenState createState() => _NoteEditorScreenState();
 }
 
 class _NoteEditorScreenState extends State<NoteEditorScreen> {
-  final _controller = TextEditingController();
-  final _promptControllers = [
-    TextEditingController(),
-    TextEditingController(),
-    TextEditingController(),
-  ];
+  late TextEditingController _titleController;
+  late TextEditingController _contentController;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.note != null) {
-      _controller.text = widget.note!.content;
-    }
-    _loadPrompts();
+    _titleController = TextEditingController(text: widget.note?.title ?? '');
+    _contentController = TextEditingController(text: widget.note?.content ?? '');
   }
 
-  Future<void> _loadPrompts() async {
-    final prefs = await SharedPreferences.getInstance();
-    for (var i = 0; i < _promptControllers.length; i++) {
-      final prompt = prefs.getString('prompt_$i') ?? '';
-      _promptControllers[i].text = prompt;
-    }
+  @override
+  void dispose() {
+    _saveNote();
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
   }
 
-  Future<void> _savePrompts() async {
-    final prefs = await SharedPreferences.getInstance();
-    for (var i = 0; i < _promptControllers.length; i++) {
-      await prefs.setString('prompt_$i', _promptControllers[i].text);
-    }
-  }
+  Future<void> _saveNote() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
 
-  void _showPromptDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Set Prompts'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(3, (index) {
-              return TextField(
-                controller: _promptControllers[index],
-                decoration: InputDecoration(
-                  labelText: 'Prompt ${index + 1}',
-                ),
-              );
-            }),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                _savePrompts();
-                Navigator.of(context).pop();
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
+    final title = _titleController.text;
+    final content = _contentController.text;
+    final noteProvider = Provider.of<NoteProvider>(context, listen: false);
+
+    if (title.isEmpty && content.isEmpty) {
+      if (widget.note != null) {
+        noteProvider.deleteNote(widget.note!.id);
+      }
+      return; // Don't save empty notes
+    }
+
+    final noteToSave = Note(
+      id: widget.note?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      content: content,
+      lastModified: DateTime.now(),
+      folderId: widget.note?.folderId,
     );
+
+    noteProvider.saveNote(noteToSave);
+    setState(() => _isSaving = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.note == null ? 'New Note' : 'Edit Note'),
+        title: _isSaving ? const Text('Saving...') : Text(widget.note == null ? 'New Note' : 'Edit Note'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _showPromptDialog,
+            icon: const Icon(Icons.save_alt_rounded, size: 28),
+            onPressed: () {
+              _saveNote();
+              Navigator.pop(context);
+            },
+            tooltip: 'Save & Close',
           ),
         ],
       ),
@@ -95,28 +82,23 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                maxLines: null,
-                expands: true,
-                decoration: const InputDecoration(
-                  hintText: 'Write your note here...',
-                  border: InputBorder.none,
-                ),
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration.collapsed(
+                hintText: 'Title',
               ),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(3, (index) {
-                return ElevatedButton(
-                  onPressed: () {
-                    _controller.text += _promptControllers[index].text;
-                  },
-                  child: Text('Prompt ${index + 1}'),
-                );
-              }),
+            Expanded(
+              child: TextField(
+                controller: _contentController,
+                decoration: const InputDecoration.collapsed(
+                  hintText: 'Start writing your note...',
+                ),
+                maxLines: null,
+                expands: true,
+              ),
             ),
           ],
         ),
