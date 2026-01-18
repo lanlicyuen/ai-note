@@ -1,10 +1,39 @@
-*.apk
-/build/
-.idea/
-.packages
-.project
-.dart_tool/
-*.iml
+# Flutter
 .flutter-plugins
 .flutter-plugins-dependencies
-pubspec.lock
+.packages
+.dart_tool/
+build/
+
+# Android
+/android/app/src/main/assets/flutter_assets/
+/android/app/src/main/assets/app.flx
+/android/app/src/main/java/io/flutter/plugins/
+/android/app/src/main/jniLibs/
+/android/app/build/
+/android/build/
+/android/app/google-services.json
+
+# iOS
+/ios/Flutter/App.framework
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+/ios/Flutter/GeneratedPluginRegistrant.*
+/ios/Runner/GeneratedPluginRegistrant.*
+/ios/Runner/Base.lproj/Main.storyboardc/
+/ios/Runner/Assets.xcassets/AppIcon.appiconset/
+/ios/Runner/Info.plist
+/ios/Runner/GoogleService-Info.plist
+
+# IDE
+.idea/
+.vscode/
+
+# Misc
+*.swp
+*.swo
+*~
+
+# Ignore apk file
+*.apk
